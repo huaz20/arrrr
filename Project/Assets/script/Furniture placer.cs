@@ -4,6 +4,7 @@ using UnityEngine.XR.ARSubsystems;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class FurniturePlacer : MonoBehaviour
 {
@@ -15,18 +16,38 @@ public class FurniturePlacer : MonoBehaviour
     [Header("UI 设置")]
     public RectTransform dragUI;
     public Canvas parentCanvas;
+    public Button clearAllButton; // 一键清除按钮
+
+    [Header("放置设置")]
+    public float maxPlacementDistance = 5f;
+    public float minPlacementDistance = 0.3f;
 
     private List<ARRaycastHit> hits = new List<ARRaycastHit>();
-    private GameObject currentFurniture;
+    private List<GameObject> spawnedFurniture = new List<GameObject>();
+    private GameObject currentDraggingFurniture;
     private bool isDraggingUI = false;
     private bool hasMovedEnough = false;
     private Vector2 dragStartPosition;
+
+    void Start()
+    {
+        // 绑定清除按钮事件
+        if (clearAllButton != null)
+        {
+            clearAllButton.onClick.AddListener(ClearAllFurniture);
+            Debug.Log("✅ 清除按钮已绑定");
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ clearAllButton 未赋值，请在 Inspector 中绑定");
+        }
+    }
 
     void Update()
     {
         HandleInput();
 
-        if (isDraggingUI && currentFurniture != null)
+        if (isDraggingUI && currentDraggingFurniture != null)
         {
             UpdateFurniturePosition();
         }
@@ -36,7 +57,6 @@ public class FurniturePlacer : MonoBehaviour
     {
         if (Application.isEditor)
         {
-            // 电脑端处理
             if (IsDraggingOnUI())
             {
                 HandleUIDrag();
@@ -44,7 +64,6 @@ public class FurniturePlacer : MonoBehaviour
         }
         else
         {
-            // 手机端处理
             HandleMobileInput();
         }
     }
@@ -71,7 +90,7 @@ public class FurniturePlacer : MonoBehaviour
     {
         if (Mouse.current.leftButton.isPressed)
         {
-            if (!hasMovedEnough && currentFurniture == null)
+            if (!hasMovedEnough && currentDraggingFurniture == null)
             {
                 Vector2 currentPos = Mouse.current.position.ReadValue();
                 float dragDistance = Vector2.Distance(dragStartPosition, currentPos);
@@ -79,7 +98,6 @@ public class FurniturePlacer : MonoBehaviour
                 if (dragDistance > 20f)
                 {
                     hasMovedEnough = true;
-                    Debug.Log($"✅ 生成家具 (PC)");
                     TrySpawnFurniture(currentPos);
                 }
             }
@@ -89,7 +107,7 @@ public class FurniturePlacer : MonoBehaviour
         {
             isDraggingUI = false;
             hasMovedEnough = false;
-            Debug.Log("结束拖拽 UI (PC)");
+            currentDraggingFurniture = null;
         }
     }
     #endregion
@@ -100,7 +118,6 @@ public class FurniturePlacer : MonoBehaviour
         if (Touchscreen.current == null) return;
         var touch = Touchscreen.current.primaryTouch;
 
-        // 开始拖拽
         if (touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began)
         {
             if (IsTouchOverUI(touch.position.ReadValue()))
@@ -112,10 +129,9 @@ public class FurniturePlacer : MonoBehaviour
             }
         }
 
-        // 拖拽中
         if (isDraggingUI && touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Moved)
         {
-            if (!hasMovedEnough && currentFurniture == null)
+            if (!hasMovedEnough && currentDraggingFurniture == null)
             {
                 Vector2 currentPos = touch.position.ReadValue();
                 float dragDistance = Vector2.Distance(dragStartPosition, currentPos);
@@ -123,19 +139,17 @@ public class FurniturePlacer : MonoBehaviour
                 if (dragDistance > 15f)
                 {
                     hasMovedEnough = true;
-                    Debug.Log($"✅ 生成家具 (手机)");
                     TrySpawnFurniture(currentPos);
                 }
             }
         }
 
-        // 结束拖拽
         if (isDraggingUI && (touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Ended ||
                              touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Canceled))
         {
             isDraggingUI = false;
             hasMovedEnough = false;
-            Debug.Log("结束拖拽 UI (手机)");
+            currentDraggingFurniture = null;
         }
     }
 
@@ -149,12 +163,26 @@ public class FurniturePlacer : MonoBehaviour
         var results = new List<RaycastResult>();
         EventSystem.current.RaycastAll(eventData, results);
 
+        // 检查是否点到拖拽UI
         foreach (var result in results)
         {
             if (result.gameObject == dragUI.gameObject ||
                 result.gameObject.transform.IsChildOf(dragUI))
             {
                 return true;
+            }
+        }
+
+        // 检查是否点到清除按钮（如果点到按钮，不开始拖拽）
+        if (clearAllButton != null)
+        {
+            foreach (var result in results)
+            {
+                if (result.gameObject == clearAllButton.gameObject ||
+                    result.gameObject.transform.IsChildOf(clearAllButton.transform))
+                {
+                    return false; // 点到按钮，不开始拖拽
+                }
             }
         }
 
@@ -169,7 +197,6 @@ public class FurniturePlacer : MonoBehaviour
             return Mouse.current.position.ReadValue();
         }
 
-        // 手机端：获取第一个活跃的触摸
         if (Touchscreen.current != null && Touchscreen.current.touches.Count > 0)
         {
             var touch = Touchscreen.current.touches[0];
@@ -181,86 +208,89 @@ public class FurniturePlacer : MonoBehaviour
 
     void TrySpawnFurniture(Vector2 screenPos)
     {
-        Debug.Log($"=== 尝试生成家具 ===");
-        Debug.Log($"屏幕位置: {screenPos}");
+        if (raycastManager == null || furniturePrefab == null) return;
 
-        if (raycastManager == null)
-        {
-            Debug.LogError("❌ raycastManager 未赋值！");
-            return;
-        }
+        // 射线检测，只检测带边界的平面
+        if (!raycastManager.Raycast(screenPos, hits, TrackableType.PlaneWithinPolygon)) return;
+        if (hits.Count == 0) return;
 
-        Debug.Log("正在执行射线检测...");
-        bool hitPlane = raycastManager.Raycast(screenPos, hits, TrackableType.PlaneWithinPolygon);
+        // 获取击中点
+        Pose hitPose = hits[0].pose;
 
-        Debug.Log($"射线检测结果: {hitPlane}");
-        Debug.Log($"击中数量: {hits.Count}");
+        // 检查距离
+        float distance = Vector3.Distance(Camera.main.transform.position, hitPose.position);
+        if (distance < minPlacementDistance || distance > maxPlacementDistance) return;
 
-        if (!hitPlane || hits.Count == 0)
-        {
-            Debug.Log("尝试其他 TrackableType...");
-            bool hitAny = raycastManager.Raycast(screenPos, hits, TrackableType.AllTypes);
-            Debug.Log($"TrackableType.AllTypes 结果: {hitAny}, 击中数量: {hits.Count}");
+        // 创建物体
+        GameObject newFurniture = Instantiate(furniturePrefab, hitPose.position, hitPose.rotation);
 
-            if (hitAny && hits.Count > 0)
-            {
-                Debug.Log($"击中的类型: {hits[0].hitType}");
-                Debug.Log($"击中位置: {hits[0].pose.position}");
-            }
-            else
-            {
-                Debug.LogWarning("⚠️ 未检测到任何平面，请确保 AR 已经识别到地面");
-                return;
-            }
-        }
+        // 调整位置，让物体底部对齐平面
+        AdjustToGroundPlane(newFurniture);
 
-        float distance = Vector3.Distance(Camera.main.transform.position, hits[0].pose.position);
-        Debug.Log($"平面距离相机: {distance}米");
+        spawnedFurniture.Add(newFurniture);
+        currentDraggingFurniture = newFurniture;
 
-        if (distance < 0.5f || distance > 5f)
-        {
-            Debug.LogWarning($"⚠️ 平面距离不合理：{distance}米，需要 0.5-5 米之间");
-        }
-
-        if (furniturePrefab == null)
-        {
-            Debug.LogError("❌ furniturePrefab 未赋值！");
-            return;
-        }
-
-        Pose pose = hits[0].pose;
-        Debug.Log($"✅ 准备生成家具，位置: {pose.position}, 旋转: {pose.rotation}");
-
-        currentFurniture = Instantiate(furniturePrefab, pose.position, pose.rotation);
-
-        if (currentFurniture == null)
-        {
-            Debug.LogError("❌ 家具生成失败！");
-            return;
-        }
-
-        Debug.Log($"✅ 家具生成成功！");
+        Debug.Log($"✅ 生成家具，当前总数: {spawnedFurniture.Count}");
 
         if (manipulator != null)
+            manipulator.SetTargetFurniture(newFurniture);
+    }
+
+    void AdjustToGroundPlane(GameObject furniture)
+    {
+        float bottomOffset = GetBottomOffset(furniture);
+        Vector3 currentPos = furniture.transform.position;
+        currentPos.y = currentPos.y - bottomOffset;
+        furniture.transform.position = currentPos;
+    }
+
+    float GetBottomOffset(GameObject obj)
+    {
+        // 使用 Renderer 的 bounds
+        Renderer renderer = obj.GetComponentInChildren<Renderer>();
+        if (renderer != null)
         {
-            manipulator.SetTargetFurniture(currentFurniture);
-            Debug.Log("已设置到 FurnitureManipulator");
+            Bounds bounds = renderer.bounds;
+            return bounds.min.y - obj.transform.position.y;
         }
+
+        // 使用 Collider
+        Collider collider = obj.GetComponentInChildren<Collider>();
+        if (collider != null)
+        {
+            Bounds bounds = collider.bounds;
+            return bounds.min.y - obj.transform.position.y;
+        }
+
+        // 组合所有 Renderer
+        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
+        if (renderers.Length > 0)
+        {
+            Bounds combinedBounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+            {
+                combinedBounds.Encapsulate(renderers[i].bounds);
+            }
+            return combinedBounds.min.y - obj.transform.position.y;
+        }
+
+        return 0f;
     }
 
     void UpdateFurniturePosition()
     {
-        if (currentFurniture == null) return;
+        if (currentDraggingFurniture == null) return;
 
         Vector2 screenPos = GetCurrentScreenPosition();
 
-        if (raycastManager.Raycast(screenPos, hits, TrackableType.PlaneWithinPolygon))
-        {
-            currentFurniture.transform.SetPositionAndRotation(
-                hits[0].pose.position,
-                hits[0].pose.rotation
-            );
-        }
+        if (!raycastManager.Raycast(screenPos, hits, TrackableType.PlaneWithinPolygon)) return;
+        if (hits.Count == 0) return;
+
+        Pose hitPose = hits[0].pose;
+
+        currentDraggingFurniture.transform.position = hitPose.position;
+        currentDraggingFurniture.transform.rotation = hitPose.rotation;
+        AdjustToGroundPlane(currentDraggingFurniture);
     }
 
     bool IsPointerOverSpecificUI()
@@ -282,21 +312,49 @@ public class FurniturePlacer : MonoBehaviour
             if (result.gameObject == dragUI.gameObject ||
                 result.gameObject.transform.IsChildOf(dragUI))
             {
-                Debug.Log($"✓ 击中 UI：{result.gameObject.name}");
                 return true;
             }
         }
 
-        return false;  // ✅ 添加这行，确保所有路径都有返回值
+        return false;
     }
 
-    public void ClearFurniture()
+    /// <summary>
+    /// 一键清除所有家具
+    /// </summary>
+    public void ClearAllFurniture()
     {
-        if (currentFurniture != null)
+        int count = spawnedFurniture.Count;
+
+        foreach (GameObject furniture in spawnedFurniture)
         {
-            Destroy(currentFurniture);
-            currentFurniture = null;
+            if (furniture != null)
+                Destroy(furniture);
         }
+
+        spawnedFurniture.Clear();
+        currentDraggingFurniture = null;
         isDraggingUI = false;
+
+        Debug.Log($"🗑️ 已清除 {count} 个家具");
+    }
+
+    /// <summary>
+    /// 清除最后一个家具
+    /// </summary>
+    public void ClearLastFurniture()
+    {
+        if (spawnedFurniture.Count > 0)
+        {
+            GameObject lastFurniture = spawnedFurniture[spawnedFurniture.Count - 1];
+            if (lastFurniture != null)
+                Destroy(lastFurniture);
+            spawnedFurniture.RemoveAt(spawnedFurniture.Count - 1);
+
+            if (currentDraggingFurniture == lastFurniture)
+                currentDraggingFurniture = null;
+
+            Debug.Log($"🗑️ 已清除最后一个家具，剩余: {spawnedFurniture.Count}个");
+        }
     }
 }
