@@ -16,7 +16,7 @@ public class FurniturePlacer : MonoBehaviour
     [Header("UI 设置")]
     public RectTransform dragUI;
     public Canvas parentCanvas;
-    public Button clearAllButton; // 一键清除按钮
+    [HideInInspector] public Button clearAllButton; // 一键清除按钮
 
     [Header("放置设置")]
     public float maxPlacementDistance = 5f;
@@ -28,20 +28,6 @@ public class FurniturePlacer : MonoBehaviour
     private bool isDraggingUI = false;
     private bool hasMovedEnough = false;
     private Vector2 dragStartPosition;
-
-    void Start()
-    {
-        // 绑定清除按钮事件
-        if (clearAllButton != null)
-        {
-            clearAllButton.onClick.AddListener(ClearAllFurniture);
-            Debug.Log("✅ 清除按钮已绑定");
-        }
-        else
-        {
-            Debug.LogWarning("⚠️ clearAllButton 未赋值，请在 Inspector 中绑定");
-        }
-    }
 
     void Update()
     {
