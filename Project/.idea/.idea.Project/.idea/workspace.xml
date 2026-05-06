@@ -5,13 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a2d8dc74-e39d-438d-9827-29f86bda6f88" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Project/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Project/.idea/encodings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Project/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Project/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/prefabs/AR Default Plane.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/prefabs/AR Default Plane.prefab" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/prefabs/Cube.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/prefabs/Cube.prefab" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/script/Furniture placer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/script/Furniture placer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectVersion.txt" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectVersion.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -101,7 +95,7 @@
       <updated>1775055385291</updated>
       <workItem from="1775055386797" duration="28000" />
       <workItem from="1777873826024" duration="2342000" />
-      <workItem from="1778060602311" duration="8460000" />
+      <workItem from="1778060602311" duration="9555000" />
     </task>
     <servers />
   </component>

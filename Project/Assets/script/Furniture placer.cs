@@ -76,14 +76,16 @@ public class FurniturePlacer : MonoBehaviour
     {
         if (Mouse.current.leftButton.isPressed)
         {
-            if (!hasMovedEnough && currentDraggingFurniture == null)
+            if (currentDraggingFurniture == null)
             {
                 Vector2 currentPos = Mouse.current.position.ReadValue();
                 float dragDistance = Vector2.Distance(dragStartPosition, currentPos);
 
+                //如果达到拖拽阈值
                 if (dragDistance > 20f)
                 {
-                    hasMovedEnough = true;
+                    //尝试生成，如果 TrySpawnFurniture 内部生成成功，
+                    //currentDraggingFurniture 不再为空，下一次Update不会再进来
                     TrySpawnFurniture(currentPos);
                 }
             }
@@ -117,14 +119,13 @@ public class FurniturePlacer : MonoBehaviour
 
         if (isDraggingUI && touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Moved)
         {
-            if (!hasMovedEnough && currentDraggingFurniture == null)
+            if (currentDraggingFurniture == null)
             {
                 Vector2 currentPos = touch.position.ReadValue();
                 float dragDistance = Vector2.Distance(dragStartPosition, currentPos);
 
                 if (dragDistance > 15f)
                 {
-                    hasMovedEnough = true;
                     TrySpawnFurniture(currentPos);
                 }
             }
