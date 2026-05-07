@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿﻿using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using System.Collections.Generic;
@@ -16,7 +16,7 @@ public class FurniturePlacer : MonoBehaviour
     [Header("UI 设置")]
     public RectTransform dragUI;
     public Canvas parentCanvas;
-    [HideInInspector] public Button clearAllButton; // 一键清除按钮
+    public Button clearAllButton; // 一键清除按钮
 
     [Header("放置设置")]
     public float maxPlacementDistance = 5f;
@@ -28,6 +28,20 @@ public class FurniturePlacer : MonoBehaviour
     private bool isDraggingUI = false;
     private bool hasMovedEnough = false;
     private Vector2 dragStartPosition;
+
+    void Start()
+    {
+        // 绑定清除按钮事件
+        if (clearAllButton != null)
+        {
+            clearAllButton.onClick.AddListener(ClearAllFurniture);
+            Debug.Log("✅ 清除按钮已绑定");
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ clearAllButton 未赋值，请在 Inspector 中绑定");
+        }
+    }
 
     void Update()
     {
@@ -76,16 +90,14 @@ public class FurniturePlacer : MonoBehaviour
     {
         if (Mouse.current.leftButton.isPressed)
         {
-            if (currentDraggingFurniture == null)
+            if (!hasMovedEnough && currentDraggingFurniture == null)
             {
                 Vector2 currentPos = Mouse.current.position.ReadValue();
                 float dragDistance = Vector2.Distance(dragStartPosition, currentPos);
 
-                //如果达到拖拽阈值
                 if (dragDistance > 20f)
                 {
-                    //尝试生成，如果 TrySpawnFurniture 内部生成成功，
-                    //currentDraggingFurniture 不再为空，下一次Update不会再进来
+                    hasMovedEnough = true;
                     TrySpawnFurniture(currentPos);
                 }
             }
@@ -119,13 +131,14 @@ public class FurniturePlacer : MonoBehaviour
 
         if (isDraggingUI && touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Moved)
         {
-            if (currentDraggingFurniture == null)
+            if (!hasMovedEnough && currentDraggingFurniture == null)
             {
                 Vector2 currentPos = touch.position.ReadValue();
                 float dragDistance = Vector2.Distance(dragStartPosition, currentPos);
 
                 if (dragDistance > 15f)
                 {
+                    hasMovedEnough = true;
                     TrySpawnFurniture(currentPos);
                 }
             }
