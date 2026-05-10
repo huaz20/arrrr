@@ -2,18 +2,21 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
-using UnityEngine.UI; // 需要引入UI命名空间
+using UnityEngine.UI;
 
 public class FixedGizmoController : MonoBehaviour
 {
     [Header("核心设置")]
     public Camera mainCamera;
-    public Transform gizmoRoot;      // 右下角的操作轴(摇杆)
-    public LayerMask furnitureLayer; // 家具层
-    public LayerMask gizmoLayer;     // 操作轴层
+    public Transform gizmoRoot;
+    public LayerMask furnitureLayer;
+    public LayerMask gizmoLayer;
+
+    [Header("地面检测")]
+    public float minYOffset = 0.01f;
 
     [Header("UI 绑定")]
-    public GameObject confirmButtonObj; // 拖入你的“对勾”UI按钮物体
+    public GameObject confirmButtonObj;
 
     [Header("遥控灵敏度")]
     public float moveSpeed = 0.002f;
@@ -21,18 +24,18 @@ public class FixedGizmoController : MonoBehaviour
     public float scaleSpeed = 0.002f;
 
     private Transform targetFurniture;
-    private bool isEditing = false; // 核心：是否处于锁定编辑状态
+    private bool isEditing = false;
+    private Collider furnitureCollider;
+    private float furnitureHeight = 0.5f;
 
     private enum GizmoPart { None, MoveX, MoveY, MoveZ, RotateX, RotateY, RotateZ, ScaleCenter }
     private GizmoPart currentPart = GizmoPart.None;
-
     private Vector2 lastScreenPos;
 
     void Start()
     {
         if (mainCamera == null) mainCamera = Camera.main;
-        
-        // 初始隐藏摇杆和对勾按钮
+
         if (gizmoRoot != null) gizmoRoot.gameObject.SetActive(false);
         if (confirmButtonObj != null) confirmButtonObj.SetActive(false);
     }
@@ -44,7 +47,6 @@ public class FixedGizmoController : MonoBehaviour
         bool isPointerPressed = false;
         bool isPointerUp = false;
 
-        // 1. 兼容获取输入
         if (Application.isEditor || Touchscreen.current == null)
         {
             if (Mouse.current != null)
@@ -67,16 +69,13 @@ public class FixedGizmoController : MonoBehaviour
             }
         }
 
-        // 2. 状态机重置
         if (isPointerUp)
         {
             currentPart = GizmoPart.None;
         }
 
-        // 拦截UI点击 (点对勾按钮时不会触发下面的3D射线)
         if (IsPointerOverUI(screenPos) && currentPart == GizmoPart.None) return;
 
-        // 3. 执行点击或拖拽
         if (isPointerDown)
         {
             HandlePointerDown(screenPos);
@@ -91,33 +90,30 @@ public class FixedGizmoController : MonoBehaviour
     {
         Ray ray = mainCamera.ScreenPointToRay(screenPos);
 
-        // 1. 优先检测：是否点到了右下角的“遥控器”
         if (Physics.Raycast(ray, out RaycastHit gizmoHit, 100f, gizmoLayer))
         {
             string partName = gizmoHit.collider.gameObject.name;
             ParseGizmoPart(partName);
-            lastScreenPos = screenPos; 
-            return; 
+            lastScreenPos = screenPos;
+            return;
         }
 
-        // 2. 核心修改：如果当前处于锁定编辑状态，则屏蔽一切对3D场景的点选！
-        if (isEditing)
-        {
-            // 直接 return，不管点到空地还是其他家具，都不会有任何反应
-            return; 
-        }
+        if (isEditing) return;
 
-        // 3. 如果没在编辑，检测是否点到了新的家具
         if (Physics.Raycast(ray, out RaycastHit hit, 100f, furnitureLayer))
         {
             targetFurniture = hit.collider.transform.root;
-            isEditing = true; // 锁定状态
+            furnitureCollider = targetFurniture.GetComponent<Collider>();
+            if (furnitureCollider == null)
+                furnitureCollider = targetFurniture.GetComponentInChildren<Collider>();
 
-            // 唤醒摇杆和对勾按钮
-            if (gizmoRoot != null) gizmoRoot.gameObject.SetActive(true); 
+            CalculateFurnitureHeight();
+            SnapToGround();  // 选中时吸附地面
+
+            isEditing = true;
+
+            if (gizmoRoot != null) gizmoRoot.gameObject.SetActive(true);
             if (confirmButtonObj != null) confirmButtonObj.SetActive(true);
-
-            Debug.Log($"🎯 选中物体: {targetFurniture.name}，进入锁定编辑模式");
         }
     }
 
@@ -159,11 +155,79 @@ public class FixedGizmoController : MonoBehaviour
             case GizmoPart.ScaleCenter:
                 float scaleFactor = (delta.x + delta.y) * scaleSpeed;
                 Vector3 newScale = targetFurniture.localScale + Vector3.one * scaleFactor;
-                if (newScale.x > 0.05f) targetFurniture.localScale = newScale;
+                if (newScale.x > 0.05f)
+                {
+                    targetFurniture.localScale = newScale;
+                    CalculateFurnitureHeight();
+                }
                 break;
         }
 
+        // 每次移动后都吸附地面（X/Z移动时必须）
+        if (currentPart == GizmoPart.MoveX || currentPart == GizmoPart.MoveZ)
+        {
+            SnapToGround();
+        }
+
         lastScreenPos = screenPos;
+    }
+
+    /// <summary>
+    /// 核心：自动找到家具下方的地面并吸附
+    /// </summary>
+    void SnapToGround()
+    {
+        if (targetFurniture == null) return;
+
+        // 从家具中心向下发射射线
+        Vector3 rayOrigin = targetFurniture.position;
+        Ray ray = new Ray(rayOrigin, Vector3.down);
+
+        // 获取所有碰撞体（不排除任何层）
+        RaycastHit[] hits = Physics.RaycastAll(ray, 5f);
+
+        float closestGroundY = -Mathf.Infinity;
+
+        foreach (RaycastHit hit in hits)
+        {
+            // 排除家具自身
+            if (hit.collider.transform.root == targetFurniture) continue;
+
+            // 这个就是地面（或其他物体），取最靠近家具的那个（Y值最大的）
+            if (hit.point.y > closestGroundY)
+            {
+                closestGroundY = hit.point.y;
+            }
+        }
+
+        // 如果找到了地面
+        if (closestGroundY > -Mathf.Infinity)
+        {
+            float targetY = closestGroundY + furnitureHeight / 2f + minYOffset;
+            Vector3 newPos = targetFurniture.position;
+            newPos.y = targetY;
+            targetFurniture.position = newPos;
+        }
+    }
+
+    void CalculateFurnitureHeight()
+    {
+        if (furnitureCollider != null)
+        {
+            furnitureHeight = furnitureCollider.bounds.size.y;
+        }
+        else
+        {
+            Renderer renderer = targetFurniture.GetComponentInChildren<Renderer>();
+            if (renderer != null)
+            {
+                furnitureHeight = renderer.bounds.size.y;
+            }
+            else
+            {
+                furnitureHeight = 0.5f;
+            }
+        }
     }
 
     bool IsPointerOverUI(Vector2 screenPos)
@@ -175,25 +239,15 @@ public class FixedGizmoController : MonoBehaviour
         return results.Count > 0;
     }
 
-    // ==========================================
-    // 给 UI 按钮调用的接口
-    // ==========================================
-
-    /// <summary>
-    /// 点击 UI 对勾按钮时调用此方法
-    /// </summary>
     public void OnConfirmEditButtonClicked()
     {
         if (!isEditing) return;
 
-        // 1. 解除锁定状态
         isEditing = false;
         targetFurniture = null;
+        furnitureCollider = null;
 
-        // 2. 隐藏摇杆和对勾按钮
         if (gizmoRoot != null) gizmoRoot.gameObject.SetActive(false);
         if (confirmButtonObj != null) confirmButtonObj.SetActive(false);
-
-        Debug.Log("✅ 已点击确认，退出编辑模式");
     }
 }
