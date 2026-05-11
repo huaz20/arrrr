@@ -222,7 +222,7 @@ public class FurniturePlacer : MonoBehaviour
         if (distance < minPlacementDistance || distance > maxPlacementDistance) return;
 
         // 创建物体
-        GameObject newFurniture = Instantiate(furniturePrefab, hitPose.position, hitPose.rotation);
+        GameObject newFurniture = Instantiate(furniturePrefab, hitPose.position, furniturePrefab.transform.rotation);
 
         // 调整位置，让物体底部对齐平面
         AdjustToGroundPlane(newFurniture);
@@ -289,7 +289,7 @@ public class FurniturePlacer : MonoBehaviour
         Pose hitPose = hits[0].pose;
 
         currentDraggingFurniture.transform.position = hitPose.position;
-        currentDraggingFurniture.transform.rotation = hitPose.rotation;
+        //   currentDraggingFurniture.transform.rotation = hitPose.rotation;
         AdjustToGroundPlane(currentDraggingFurniture);
     }
 

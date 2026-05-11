@@ -12,6 +12,22 @@ PrefabInstance:
       propertyPath: m_Name
       value: poliform_sophie_bar_stool
       objectReference: {fileID: 0}
+    - target: {fileID: -6689036041284674117, guid: a64df34bf6282704699c91364e938f8d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -5132125640572117648, guid: a64df34bf6282704699c91364e938f8d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -1243354702290510266, guid: a64df34bf6282704699c91364e938f8d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2484665033948473043, guid: a64df34bf6282704699c91364e938f8d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 2774220344278030320, guid: a64df34bf6282704699c91364e938f8d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1313.4811
@@ -42,7 +58,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2774220344278030320, guid: a64df34bf6282704699c91364e938f8d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
+      value: -90
       objectReference: {fileID: 0}
     - target: {fileID: 2774220344278030320, guid: a64df34bf6282704699c91364e938f8d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
@@ -52,8 +68,66 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3730337408785568801, guid: a64df34bf6282704699c91364e938f8d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7557575695963332010, guid: a64df34bf6282704699c91364e938f8d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8978103523514716507, guid: a64df34bf6282704699c91364e938f8d, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: -6689036041284674117, guid: a64df34bf6282704699c91364e938f8d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6343182201701462864}
+    - targetCorrespondingSourceObject: {fileID: -6689036041284674117, guid: a64df34bf6282704699c91364e938f8d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7877160297497769397}
   m_SourcePrefab: {fileID: -5645937942226959685, guid: a64df34bf6282704699c91364e938f8d, type: 3}
+--- !u!1 &6344884003274534463 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -6689036041284674117, guid: a64df34bf6282704699c91364e938f8d, type: 3}
+  m_PrefabInstance: {fileID: 8873862903175689092}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &6343182201701462864
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6344884003274534463}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &7877160297497769397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6344884003274534463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df0497cd5901ca1438cc9998c17af602, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  customRotation: {x: -90, y: -45, z: -118.8}
+  customScale: 1

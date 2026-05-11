@@ -175,13 +175,24 @@ namespace script
                 // 2. 看向模型中心点
                 iconRenderCamera.transform.LookAt(Vector3.zero);
 
-                // 3. 模型摆正：完全归零，不旋转！！（解决屁股朝上的核心）
+                // 3. 模型摆正与缩放：读取预制体身上的专属配置
                 tempRenderObject.transform.position = Vector3.zero;
-                tempRenderObject.transform.rotation = Quaternion.identity; // 不旋转
 
-                // 4. 缩放：根据模型大小调整（0.8~1.2之间都可以）
-                tempRenderObject.transform.localScale = Vector3.one * 1f;
-
+                // 尝试获取图标配置脚本
+                IconSettings settings = prefab.GetComponent<IconSettings>();
+                
+                if (settings != null)
+                {
+                    // 如果有脚本，就用脚本里专门调好的角度和大小
+                    tempRenderObject.transform.rotation = Quaternion.Euler(settings.customRotation);
+                    tempRenderObject.transform.localScale = Vector3.one * settings.customScale;
+                }
+                else
+                {
+                    // 如果没挂脚本，就给一个保底的默认角度
+                    tempRenderObject.transform.rotation = Quaternion.Euler(-90, 0, 0);
+                    tempRenderObject.transform.localScale = Vector3.one;
+                }
                 // 设置一个临时Layer用于渲染
                 int originalLayer = tempRenderObject.layer;
                 SetLayerRecursively(tempRenderObject, LayerMask.NameToLayer("UI"));
@@ -228,11 +239,19 @@ namespace script
 
                 // 恢复Layer
                 SetLayerRecursively(tempRenderObject, originalLayer);
-
+                //111
                 // 创建Sprite
+                // ... 前面的代码 (创建 Sprite)
                 Sprite newSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
 
+                // ======== 【修复位置：在这里添加这三行代码】 ========
+                // 拍完照立刻销毁临时物体，绝不留到下一次循环
+                DestroyImmediate(tempRenderObject); 
+                tempRenderObject = null;
+                // ===================================================
+
                 return newSprite;
+                //111
             }
             catch (System.Exception e)
             {
@@ -292,6 +311,17 @@ namespace script
 
             if (clearBtn != null && furniturePlacer != null)
                 clearBtn.onClick.RemoveListener(furniturePlacer.ClearAllFurniture);
+        }
+        
+        private void Update()
+        {
+            // 使用新版 Input System 监听键盘 R 键
+            if (UnityEngine.InputSystem.Keyboard.current != null && 
+                UnityEngine.InputSystem.Keyboard.current.rKey.wasPressedThisFrame)
+            {
+                Debug.Log("🔄 正在重新生成图标...");
+                InitializeUI(); // 重新走一遍清空和生成的流程
+            }
         }
     }
 }
