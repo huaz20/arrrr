@@ -841,6 +841,7 @@ PlayerSettings:
   webGLMemoryGeometricGrowthCap: 96
   webGLPowerPreference: 2
   scriptingDefineSymbols:
+    Android: LETAI_TRUESHADOW
     Standalone: LETAI_TRUESHADOW
   additionalCompilerArguments: {}
   platformArchitecture: {}

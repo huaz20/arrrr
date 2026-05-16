@@ -121,5 +121,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df0497cd5901ca1438cc9998c17af602, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  customRotation: {x: -0.58, y: -45, z: -50}
+  customRotation: {x: -45.72, y: -46.6, z: 163.1}
   customScale: 1
