@@ -1315,8 +1315,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 426254443}
   m_HandleRect: {fileID: 426254442}
   m_Direction: 2
-  m_Value: 1
-  m_Size: 0.99996495
+  m_Value: 0
+  m_Size: 0.9659734
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -3000,10 +3000,13 @@ MonoBehaviour:
   furniturePlacer: {fileID: 782628377}
   contentParent: {fileID: 959649415}
   clearBtn: {fileID: 132918643}
+  simulateMobileInEditor: 1
   targetUIPanel: {fileID: 1375347537}
-  mainCam: {fileID: 0}
-  tiltAngle: {x: 0, y: 0, z: 20}
+  mainCam: {fileID: 65284399}
+  pcTiltAngle: {x: 0, y: 0, z: 20}
+  mobileTiltAngle: {x: 4, y: -2, z: 18}
   offsetFromCenter: {x: 0.65, y: 0}
+  viewportPos: {x: 0.7, y: 0.5}
   distanceFromCam: 1.2
   smoothTime: 0.25
 --- !u!4 &840889929
@@ -3248,7 +3251,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.0010054875, y: 0.034621943}
+  m_AnchoredPosition: {x: -0.0032552232, y: 0.029092891}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &959649417

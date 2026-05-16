@@ -20,12 +20,18 @@ namespace script
 
         [Space(10)]
         [Header("立体跟随设置")] 
+        [Header("开发者调试")]
+        [Tooltip("勾选后，即使在电脑上运行也会强制使用手机的Viewport适配逻辑")]
+        public bool simulateMobileInEditor = false;
         [Header("操作的UI面板对象")]
         public Transform targetUIPanel;
         [Header("主视角相机，可为空，不填会自动寻找MainCamera")]
         public Camera mainCam;
         [Header("UI面板的倾斜角度，制造立体感")]
-        public Vector3 tiltAngle = new Vector3(15f, -10f, 0f);
+        [Header("【电脑端】")]
+        public Vector3 pcTiltAngle = new Vector3(15f, -10f, 0f);
+        [Header("【手机端】")] 
+        public Vector3 mobileTiltAngle = new Vector3(10f, -8f, 0f);
         [Header("UI相对于视野中心的偏移量")]
         [Header("【电脑端】X水平，Y垂直")] 
         public Vector2 offsetFromCenter = new Vector2(0.6f, 0f);
@@ -356,14 +362,29 @@ namespace script
             
             // 1.计算目标位置
             Vector3 targetPos;
+            Vector3 currentTiltAngle;
             
 #if UNITY_EDITOR || UNITY_STANDALONE
-            targetPos =  mainCam.transform.position + mainCam.transform.forward * distanceFromCam
-                                          + mainCam.transform.right * offsetFromCenter.x
-                                          + mainCam.transform.up * offsetFromCenter.y;
+            if (simulateMobileInEditor)
+            {
+                //如果开启了模拟，就在电脑上跑手机逻辑
+                Vector3 viewportPoint = new Vector3(viewportPos.x, viewportPos.y, distanceFromCam);
+                targetPos = mainCam.ViewportToWorldPoint(viewportPoint);
+                currentTiltAngle = mobileTiltAngle;
+            }
+            else
+            {
+                //否则跑PC逻辑
+                targetPos = mainCam.transform.position 
+                            + mainCam.transform.forward * distanceFromCam
+                            + mainCam.transform.right * offsetFromCenter.x
+                            + mainCam.transform.up * offsetFromCenter.y;
+                currentTiltAngle = pcTiltAngle;
+            }
 #else
             Vector3 viewportPoint = new Vector3(viewportPosition.x, viewportPosition.y, distanceFromCam);
             targetPos = mainCam.ViewportToWorldPoint(viewportPoint);
+            currentTiltAngle = mobileTiltAngle;
 #endif
             
             // 2.移动
@@ -376,7 +397,7 @@ namespace script
                 //先正面看向摄像机
                 Quaternion lookRotation = Quaternion.LookRotation(dirToCam);
                 //再叠加倾斜角度
-                targetUIPanel.rotation = lookRotation * Quaternion.Euler(tiltAngle);
+                targetUIPanel.rotation = lookRotation * Quaternion.Euler(currentTiltAngle);
             }
         }
     }
