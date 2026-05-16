@@ -5,7 +5,7 @@ MonoImporter:
   serializedVersion: 2
   defaultReferences:
   - material: {instanceID: 0}
-  - paraformMaterial: {fileID: 2100000, guid: 2f9139f0e751b5343b2e042eb523123e, type: 2}
+  - paraformMaterial: {fileID: 2100000, guid: 96c5704d0681e35408630c488fc0c234, type: 2}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

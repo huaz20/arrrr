@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Translucent Image Default Resources
   m_EditorClassIdentifier: 
   material: {fileID: 2100000, guid: 96c5704d0681e35408630c488fc0c234, type: 2}
-  paraformMaterial: {fileID: 2100000, guid: c2c99768271516e4b8f434b56fc1cea0, type: 2}
+  paraformMaterial: {fileID: 2100000, guid: 96c5704d0681e35408630c488fc0c234, type: 2}

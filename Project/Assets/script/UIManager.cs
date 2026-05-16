@@ -382,11 +382,11 @@ namespace script
                 currentTiltAngle = pcTiltAngle;
             }
 #else
-            Vector3 viewportPoint = new Vector3(viewportPosition.x, viewportPosition.y, distanceFromCam);
+            Vector3 viewportPoint = new Vector3(viewportPos.x, viewportPos.y, distanceFromCam);
             targetPos = mainCam.ViewportToWorldPoint(viewportPoint);
             currentTiltAngle = mobileTiltAngle;
 #endif
-            
+
             // 2.移动
             targetUIPanel.position = Vector3.SmoothDamp(targetUIPanel.position, targetPos, ref velocity, smoothTime);
             
