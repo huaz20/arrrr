@@ -23,11 +23,14 @@ namespace script
         [Header("操作的UI面板对象")]
         public Transform targetUIPanel;
         [Header("主视角相机，可为空，不填会自动寻找MainCamera")]
-        public Transform mainCam;
+        public Camera mainCam;
         [Header("UI面板的倾斜角度，制造立体感")]
         public Vector3 tiltAngle = new Vector3(15f, -10f, 0f);
-        [Header("UI相对于视野中心的偏移量（X控制左右，Y控制上下）")] 
+        [Header("UI相对于视野中心的偏移量")]
+        [Header("【电脑端】X水平，Y垂直")] 
         public Vector2 offsetFromCenter = new Vector2(0.6f, 0f);
+        [Header("【手机端】基于屏幕比例的相对位置，X=0.85表示靠右，Y=0.5表示居中")]
+        public Vector2 viewportPos = new Vector2(0.85f, 0.5f);
         [Header("与相机间的距离")] 
         public float distanceFromCam = 1f;
         [Header("跟随相机时的平滑延迟度（值越大越有拖拽感）")] 
@@ -59,7 +62,7 @@ namespace script
 
             if (mainCam == null && Camera.main != null)
             {
-                mainCam = Camera.main.transform;
+                mainCam = Camera.main;
             }
             
             // 清空旧UI和纹理缓存
@@ -352,15 +355,22 @@ namespace script
             if (mainCam == null) return;
             
             // 1.计算目标位置
-            Vector3 targetPos = mainCam.position + mainCam.forward * distanceFromCam
-                                                 + mainCam.right * offsetFromCenter.x
-                                                 + mainCam.up * offsetFromCenter.y;
+            Vector3 targetPos;
+            
+#if UNITY_EDITOR || UNITY_STANDALONE
+            targetPos =  mainCam.transform.position + mainCam.transform.forward * distanceFromCam
+                                          + mainCam.transform.right * offsetFromCenter.x
+                                          + mainCam.transform.up * offsetFromCenter.y;
+#else
+            Vector3 viewportPoint = new Vector3(viewportPosition.x, viewportPosition.y, distanceFromCam);
+            targetPos = mainCam.ViewportToWorldPoint(viewportPoint);
+#endif
             
             // 2.移动
             targetUIPanel.position = Vector3.SmoothDamp(targetUIPanel.position, targetPos, ref velocity, smoothTime);
             
             // 3.旋转
-            Vector3 dirToCam = targetUIPanel.position - mainCam.position;
+            Vector3 dirToCam = targetUIPanel.position - mainCam.transform.position;
             if (dirToCam != Vector3.zero)
             {
                 //先正面看向摄像机
