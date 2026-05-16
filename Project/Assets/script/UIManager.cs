@@ -1,3 +1,4 @@
+using System;
 using script.Tool;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,6 +18,23 @@ namespace script
         [Header("清空按钮")]
         public Button clearBtn;
 
+        [Space(10)]
+        [Header("立体跟随设置")] 
+        [Header("操作的UI面板对象")]
+        public Transform targetUIPanel;
+        [Header("主视角相机，可为空，不填会自动寻找MainCamera")]
+        public Transform mainCam;
+        [Header("UI面板的倾斜角度，制造立体感")]
+        public Vector3 tiltAngle = new Vector3(15f, -10f, 0f);
+        [Header("UI相对于视野中心的偏移量（X控制左右，Y控制上下）")] 
+        public Vector2 offsetFromCenter = new Vector2(0.6f, 0f);
+        [Header("与相机间的距离")] 
+        public float distanceFromCam = 1f;
+        [Header("跟随相机时的平滑延迟度（值越大越有拖拽感）")] 
+        public float smoothTime = 0.3f;
+        
+        private Vector3 velocity = Vector3.zero;
+        
         private readonly string FURNITURE_PATH = "Furniture";
 
         // 用于释放生成的纹理，防止内存泄漏
@@ -39,6 +57,11 @@ namespace script
                 return;
             }
 
+            if (mainCam == null && Camera.main != null)
+            {
+                mainCam = Camera.main.transform;
+            }
+            
             // 清空旧UI和纹理缓存
             ClearOldUIItemsAndSprites();
 
@@ -321,6 +344,29 @@ namespace script
             {
                 Debug.Log("🔄 正在重新生成图标...");
                 InitializeUI(); // 重新走一遍清空和生成的流程
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (mainCam == null) return;
+            
+            // 1.计算目标位置
+            Vector3 targetPos = mainCam.position + mainCam.forward * distanceFromCam
+                                                 + mainCam.right * offsetFromCenter.x
+                                                 + mainCam.up * offsetFromCenter.y;
+            
+            // 2.移动
+            targetUIPanel.position = Vector3.SmoothDamp(targetUIPanel.position, targetPos, ref velocity, smoothTime);
+            
+            // 3.旋转
+            Vector3 dirToCam = targetUIPanel.position - mainCam.position;
+            if (dirToCam != Vector3.zero)
+            {
+                //先正面看向摄像机
+                Quaternion lookRotation = Quaternion.LookRotation(dirToCam);
+                //再叠加倾斜角度
+                targetUIPanel.rotation = lookRotation * Quaternion.Euler(tiltAngle);
             }
         }
     }
